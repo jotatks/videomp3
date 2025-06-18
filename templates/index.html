@@ -1,14 +1,80 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Conversor YouTube MP3</title>
+    <meta charset="UTF-8" />
+    <title>Converter YouTube para MP3</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Conversor de YouTube para MP3</h1>
-    <form method="POST">
-        <input type="text" name="url" placeholder="Cole o link do vídeo aqui" required>
-        <button type="submit">Converter</button>
-    </form>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="mb-4 text-center">Converter YouTube para MP3</h1>
+
+        <form method="POST" class="mb-4" id="convertForm">
+            <div class="mb-3">
+                <input type="url" name="url" class="form-control form-control-lg" placeholder="Cole o link do YouTube aqui" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100">Converter</button>
+        </form>
+
+        <div id="status" class="alert alert-info d-none"></div>
+
+        <div id="downloadLink" class="d-none mt-3">
+            <h5>Arquivos prontos para download:</h5>
+            <ul id="fileList" class="list-group"></ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const form = document.getElementById('convertForm');
+        const statusDiv = document.getElementById('status');
+        const downloadDiv = document.getElementById('downloadLink');
+        const fileList = document.getElementById('fileList');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            statusDiv.textContent = 'Baixando e convertendo... aguarde.';
+            statusDiv.classList.remove('d-none', 'alert-danger');
+            statusDiv.classList.add('alert-info');
+            downloadDiv.classList.add('d-none');
+            fileList.innerHTML = '';
+
+            const formData = new FormData(form);
+            const response = await fetch('/', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    statusDiv.textContent = 'Pronto! Clique nos links abaixo para baixar.';
+                    statusDiv.classList.remove('alert-info');
+                    statusDiv.classList.add('alert-success');
+                    downloadDiv.classList.remove('d-none');
+
+                    data.files.forEach((file, idx) => {
+                        const li = document.createElement('li');
+                        li.classList.add('list-group-item');
+                        const a = document.createElement('a');
+                        a.href = file;
+                        a.textContent = data.filenames[idx];
+                        a.setAttribute('download', '');
+                        li.appendChild(a);
+                        fileList.appendChild(li);
+                    });
+
+                } else {
+                    statusDiv.textContent = 'Erro: ' + data.error;
+                    statusDiv.classList.remove('alert-info');
+                    statusDiv.classList.add('alert-danger');
+                }
+            } else {
+                statusDiv.textContent = 'Erro no servidor.';
+                statusDiv.classList.remove('alert-info');
+                statusDiv.classList.add('alert-danger');
+            }
+        });
+    </script>
 </body>
 </html>
