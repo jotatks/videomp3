@@ -1,49 +1,27 @@
-from flask import Flask, render_template, request, send_from_directory
-import os
-from yt_dlp import YoutubeDL
-from uuid import uuid4
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Baixar YouTube MP3</title>
+</head>
+<body>
+    <h1>Conversor YouTube → MP3</h1>
+    <form method="POST">
+        <input type="text" name="url" placeholder="Cole o link do YouTube aqui" required>
+        <button type="submit">Converter</button>
+    </form>
 
-app = Flask(__name__)
-DOWNLOAD_FOLDER = os.path.join(os.getcwd(), 'download')
-os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+    {% if error %}
+        <p style="color: red;">Erro: {{ error }}</p>
+    {% endif %}
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        url = request.form['url']
-        if not url:
-            return render_template('index.html', error="URL vazia.")
-
-        output_id = str(uuid4())  # cria nome único para evitar conflito
-        output_path = os.path.join(DOWNLOAD_FOLDER, f"{output_id}.mp3")
-
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': output_path,
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'noplaylist': False,  # suporta playlists!
-        }
-
-        try:
-            with YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
-        except Exception as e:
-            return render_template('index.html', error=str(e))
-
-        filename = os.path.basename(output_path)
-        return render_template('index.html', success=True, filename=filename)
-
-    return render_template('index.html')
-
-@app.route('/download/<filename>')
-def download(filename):
-    return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)
-
-if __name__ == '__main__':
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    {% if success %}
+        <p>Playlist baixada com sucesso!</p>
+        <ul>
+            {% for file in files %}
+                <li><a href="{{ file }}">Baixar arquivo {{ loop.index }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>
